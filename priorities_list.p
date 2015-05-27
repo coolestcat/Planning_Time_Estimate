@@ -1,0 +1,10 @@
+(lp0
+S'SGAS_P1'
+p1
+aS'SGAS_P2'
+p2
+aS'SGAS_P3'
+p3
+aS'SGAS_P4'
+p4
+a.
