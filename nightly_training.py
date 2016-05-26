@@ -23,6 +23,8 @@ import matplotlib.pyplot as plt
 from holidays import Holidays
 import pickle
 
+####### IGNORE THESE FUNCTIONS
+
 def actualTime(w, last, first, qc_holidays):
 	# remove weekends
 	total_time = (w[last]-w[first]).total_seconds()/float(60*60*24)
@@ -82,6 +84,14 @@ def timelineActive(arr, time):
 
 	return toRet
 
+#######
+
+
+# findNext takes as input a table, a query string, 
+# a range of values in the table to iterate over, 
+# and a status code, and simply returns an array of all the numbers 
+# i within the valid range for which the table[i] 
+# has the designated query string and status code.
 
 def findNext(arr, nextString, iterStart, iterEnd, status):
 	l = []
@@ -111,6 +121,8 @@ def findNext(arr, nextString, iterStart, iterEnd, status):
 	# return list of next positions
 	return l
 
+# notTermPresent takes as input the same things as findNext, 
+# except it returns 1 if the query string/status code is in the valid range, and 0 otherwise. 
 def notTermPresent(arr, notString, start, end, status):
 	if status==0:
 		for i in range(start, end):
@@ -137,6 +149,10 @@ def notTermPresent(arr, notString, start, end, status):
 
 	return 0
 
+# for details, see the oncotime report Laurie sent - this function just takes as input an array that has 
+# all the events for a patient in chronological order, as well as a sequence of events to match, and
+# returns an array of arrays (of INDICES into the original arr array), where each array
+# represents a valid sequence of events for that patient that matches the sequence specifier
 def findAll(arr, sequence, not_array, status_array, endCurPatient, l):
 	if (len(sequence)==0):
 		return l # return [8]
@@ -330,6 +346,9 @@ def main():
 	mysql_cn = MySQLdb.connect(host='localhost', port=3306, user='alvin', passwd='', db='hig')
 	sequenceCursor = mysql_cn.cursor(MySQLdb.cursors.DictCursor)
 	
+
+	# query mysql for all the tasks, appointments, plans, etc for every patient (with serNum < 35384)
+
 	sequenceCursor.execute("""
     SELECT a.AliasName, t.PatientSerNum, t.CreationDate, t.CompletionDate, t.Status
     FROM Task t INNER JOIN Patient p ON p.PatientSerNum = t.PatientSerNum 
@@ -358,9 +377,13 @@ def main():
     WHERE p.PatientSerNum<35384
     ORDER BY PatientSerNum, CreationDate
 	""")
-	
+
+	#every line that can be iterated through with sequenceCursor now represents an event for a patient.
+
 	full_set = []
 
+	# IGNORE THESE COMMENTED OUT SEQUENCES
+
 	# sequence = ['Ct-Sim', ['Ct-Sim', 'Consult', 'Consult Appointment', 'READY FOR DOSE CALCULATION', 'PRESCRIPTION APPROVED', 'Prescription Document (Fast Track)', 'READY FOR PHYSICS QA' 'READY FOR TREATMENT'], 'READY FOR MD CONTOUR', ['Ct-Sim', 'Consult', 'Consult Appointment', 'READY FOR MD CONTOUR', 'PRESCRIPTION APPROVED', 'Prescription Document (Fast Track)', 'READY FOR PHYSICS QA', 'READY FOR TREATMENT'], 'READY FOR DOSE CALCULATION', ['Ct-Sim', 'Consult', 'Consult Appointment','READY FOR DOSE CALCULATION', 'READY FOR MD CONTOUR', 'READY FOR CONTOUR', 'READY FOR PHYSICS QA', 'READY FOR TREATMENT'], ['Prescription Document (Fast Track)','PRESCRIPTION APPROVED'], ['Ct-Sim', 'Consult', 'Consult Appointment','Prescription Document (Fast Track)','PRESCRIPTION APPROVED', 'READY FOR MD CONTOUR', 'READY FOR CONTOUR', 'READY FOR DOSE CALCULATION', 'READY FOR TREATMENT'], 'READY FOR PHYSICS QA', ['Ct-Sim', 'Consult', 'Consult Appointment', 'READY FOR PHYSICS QA', 'READY FOR MD CONTOUR', 'READY FOR CONTOUR', 'PRESCRIPTION APPROVED', 'Prescription Document (Fast Track)','READY FOR DOSE CALCULATION'], 'READY FOR TREATMENT']
 	# not_array=[0, 5, 0, 5, 0, 5, 2, 5, 0, 5, 0]
 	# status=[0, [0,0,0,0,0,0,0,0], 0, [0,0,0,0,0,0,0,0], 0, [0,0,0,0,0,0,0,0], [0,0],[0,0,0,0,0,0,0,0,0], 0, [0,0,0,0,0,0,0,0,0], 0]
@@ -368,6 +391,15 @@ def main():
 	# sequence = ['Ct-Sim', ['Ct-Sim', 'Consult', 'Consult Appointment', 'READY FOR DOSE CALCULATION', 'PRESCRIPTION APPROVED', 'Prescription Document (Fast Track)', 'READY FOR PHYSICS QA' 'READY FOR TREATMENT'], 'READY FOR MD CONTOUR', ['Ct-Sim', 'Consult', 'Consult Appointment', 'READY FOR MD CONTOUR', 'PRESCRIPTION APPROVED', 'Prescription Document (Fast Track)', 'READY FOR PHYSICS QA', 'READY FOR TREATMENT'], 'READY FOR DOSE CALCULATION', ['Ct-Sim', 'Consult', 'Consult Appointment','READY FOR DOSE CALCULATION', 'READY FOR MD CONTOUR', 'READY FOR CONTOUR', 'READY FOR PHYSICS QA', 'READY FOR TREATMENT'], ['Prescription Document (Fast Track)','PRESCRIPTION APPROVED'], ['Ct-Sim', 'Consult', 'Consult Appointment','Prescription Document (Fast Track)','PRESCRIPTION APPROVED', 'READY FOR MD CONTOUR', 'READY FOR CONTOUR', 'READY FOR DOSE CALCULATION', 'READY FOR TREATMENT'], 'READY FOR PHYSICS QA', ['Ct-Sim', 'Consult', 'Consult Appointment', 'READY FOR PHYSICS QA', 'READY FOR MD CONTOUR', 'READY FOR CONTOUR', 'PRESCRIPTION APPROVED', 'Prescription Document (Fast Track)','READY FOR DOSE CALCULATION'], 'READY FOR TREATMENT']
 	# not_array=[0, 5, 0, 5, 0, 5, 2, 5, 0, 5, 0]
 	# status=[0, [0,0,0,0,0,0,0,0], 0, [0,0,0,0,0,0,0,0], 0, [0,0,0,0,0,0,0,0], [0,0],[0,0,0,0,0,0,0,0,0], 0, [0,0,0,0,0,0,0,0,0], 0]
+
+	# 
+
+	# again, this is described in the oncotime report,
+	# but briefly this means I want a sequence of events that looks like:
+	# Ct-Sim followed by NOT (Ct-Sim or READY FOR DOSE....) followed by READY FOR MD CONTOUR followed
+	# by NOT (a list of terms) etc.
+
+	# ignore the status - this refers to whether the field in the database is flagged as active, closed, etc.
 
 	sequence = ['Ct-Sim', ['Ct-Sim', 'READY FOR DOSE CALCULATION', 'PRESCRIPTION APPROVED', 'Prescription Document (Fast Track)', 'READY FOR PHYSICS QA' 'READY FOR TREATMENT'], 'READY FOR MD CONTOUR', ['Ct-Sim', 'Consult', 'Consult Appointment', 'READY FOR MD CONTOUR', 'PRESCRIPTION APPROVED', 'Prescription Document (Fast Track)', 'READY FOR PHYSICS QA', 'READY FOR TREATMENT'], 'READY FOR DOSE CALCULATION', ['Ct-Sim', 'READY FOR DOSE CALCULATION', 'READY FOR MD CONTOUR', 'READY FOR CONTOUR', 'READY FOR PHYSICS QA', 'READY FOR TREATMENT'], ['Prescription Document (Fast Track)','PRESCRIPTION APPROVED'], ['Ct-Sim', 'Prescription Document (Fast Track)','PRESCRIPTION APPROVED', 'READY FOR MD CONTOUR', 'READY FOR CONTOUR', 'READY FOR DOSE CALCULATION', 'READY FOR TREATMENT'], 'READY FOR PHYSICS QA', ['Ct-Sim', 'Consult', 'Consult Appointment', 'READY FOR PHYSICS QA', 'READY FOR MD CONTOUR', 'READY FOR CONTOUR', 'PRESCRIPTION APPROVED', 'Prescription Document (Fast Track)','READY FOR DOSE CALCULATION'], 'READY FOR TREATMENT']
 	not_array=[0, 5, 0, 5, 0, 5, 2, 5, 0, 5, 0]
@@ -381,6 +413,7 @@ def main():
 
 	this_set = []
 
+	# this while loop just iterates through the sequenceCursor, and creates the arr array for each patient (1 to 38000something)
 	while (t is not None):
 		arr = []
 		while(curSerNum == serNum):
@@ -392,14 +425,21 @@ def main():
 			curSerNum = t['PatientSerNum']
 
 		# Do the Sequence Extraction
+
+		# this just copies the arrays that specify the matching sequence into new arrays
+		# because the function findAll operates on the arrays by popping elements off the front of it
 		new_sequence = sequence[:]
 		new_not_array = not_array[:]
 		new_status = status[:]
 
-
+		# l is the array that the arrays of sequences get recursively added to
 		l = []
+
+		# findall is called passing in arr and the sequence specifiers
 		a = findAll(arr, new_sequence, new_not_array, new_status, len(arr), l)
 
+		# this is not strictly necessary, I just did this to remove duplicates from the set 
+		# (converted to strings, made a hashset, copied them back into the a array)
 		a_set = Set([])
 		for elem in a:
 			a_set.add(str(elem))
@@ -408,7 +448,10 @@ def main():
 		for elem in a_set:
 			a.append(eval(elem))
 
-		# print a
+		# this adds the actual row of data into this_set, corresponding to each valid patient timeseries that matches 
+		# the sequence specifier
+		# (remember findAll returns and array of arrays of indices of arr)
+
 		for timeline in a:
 			s = []
 			for elem in timeline:
@@ -422,12 +465,20 @@ def main():
 
 		serNum = t['PatientSerNum']
 		curSerNum = serNum
+		# iterate on to the next patient, until the entire sequenceCursor is iterated through
 
 	full_set = full_set + this_set
 
 	# sequence = ['Ct-Sim', ['Ct-Sim', 'Consult', 'Consult Appointment', 'READY FOR DOSE CALCULATION', 'PRESCRIPTION APPROVED', 'Prescription Document (Fast Track)', 'READY FOR PHYSICS QA' 'READY FOR TREATMENT'], 'READY FOR MD CONTOUR', ['Ct-Sim', 'Consult', 'Consult Appointment', 'READY FOR MD CONTOUR', 'PRESCRIPTION APPROVED', 'Prescription Document (Fast Track)', 'READY FOR PHYSICS QA', 'READY FOR TREATMENT'], 'READY FOR DOSE CALCULATION', ['Ct-Sim', 'Consult', 'Consult Appointment','READY FOR DOSE CALCULATION', 'READY FOR MD CONTOUR', 'READY FOR CONTOUR', 'READY FOR PHYSICS QA', 'READY FOR TREATMENT'], ['Prescription Document (Fast Track)','PRESCRIPTION APPROVED'], ['Ct-Sim', 'Consult', 'Consult Appointment','Prescription Document (Fast Track)','PRESCRIPTION APPROVED', 'READY FOR MD CONTOUR', 'READY FOR CONTOUR', 'READY FOR DOSE CALCULATION', 'READY FOR TREATMENT'], 'READY FOR PHYSICS QA', ['Ct-Sim', 'Consult', 'Consult Appointment', 'READY FOR PHYSICS QA', 'READY FOR MD CONTOUR', 'READY FOR CONTOUR', 'PRESCRIPTION APPROVED', 'Prescription Document (Fast Track)','READY FOR DOSE CALCULATION'], 'READY FOR TREATMENT']
 	# not_array=[0, 5, 0, 5, 0, 5, 2, 5, 0, 5, 0]
 	# status=[0, [0,0,0,0,0,0,0,0], 0, [0,0,0,0,0,0,0,0], 0, [0,0,0,0,0,0,0,0], [0,0],[0,0,0,0,0,0,0,0,0], 0, [0,0,0,0,0,0,0,0,0], 0]
+
+
+
+	# this is just me experimenting with other sequences. The code is copy and pasted three times, violating
+	# everything you and I ever learned about code reuse and programming. I am sorry. I remember I 
+	# basically just spent a month trying to get the number to go down (the error in the prediction), 
+	# and one way was by adding more training data (more valid sequences)
 
 	sequence = ['READY FOR MD CONTOUR', '*', 'Ct-Sim', ['Ct-Sim', 'Consult', 'Consult Appointment', 'READY FOR MD CONTOUR', 'PRESCRIPTION APPROVED', 'Prescription Document (Fast Track)', 'READY FOR PHYSICS QA', 'READY FOR TREATMENT'], 'READY FOR DOSE CALCULATION', ['Ct-Sim', 'Consult', 'Consult Appointment','READY FOR DOSE CALCULATION', 'READY FOR MD CONTOUR', 'READY FOR CONTOUR', 'READY FOR PHYSICS QA', 'READY FOR TREATMENT'], ['Prescription Document (Fast Track)','PRESCRIPTION APPROVED'], ['Ct-Sim', 'Consult', 'Consult Appointment','Prescription Document (Fast Track)','PRESCRIPTION APPROVED', 'READY FOR MD CONTOUR', 'READY FOR CONTOUR', 'READY FOR DOSE CALCULATION', 'READY FOR TREATMENT'], 'READY FOR PHYSICS QA', ['Ct-Sim', 'Consult', 'Consult Appointment', 'READY FOR PHYSICS QA', 'READY FOR MD CONTOUR', 'READY FOR CONTOUR', 'PRESCRIPTION APPROVED', 'Prescription Document (Fast Track)','READY FOR DOSE CALCULATION'], 'READY FOR TREATMENT']
 	not_array=[0, 6, 0, 5, 0, 5, 2, 5, 0, 5, 0]
@@ -599,6 +650,11 @@ def main():
 
 	full_set = full_set + this_set
 
+
+	# the following code simply creates a bunch of dictionaries so that for each timeline that I add
+	# to the training data, I can add the features (the patient's doctor, priority, diagnosis)
+
+
 	# write timelines to multimap: patient -> list(timelines)
 	patient_to_timeseries = defaultdict(list)
 
@@ -611,6 +667,9 @@ def main():
 
 	diagnosisCursor = mysql_cn.cursor(MySQLdb.cursors.DictCursor)
 
+	# extracts all diagnoses from the database, does some processing before mapping a patient to 
+	# a diagnosis (splitting up the term, making sure it is only in the list of cancers specified in 
+	# cancer_types)
 	diagnosisCursor.execute(""" 
 	SELECT diag.PatientSerNum, diag.DiagnosisCreationDate, diag.DiagnosisCode, diag.Description
 	FROM Patient p INNER JOIN Diagnosis diag ON p.PatientSerNum = diag.PatientSerNum
@@ -641,6 +700,8 @@ def main():
 
 	doctorCursor = mysql_cn.cursor(MySQLdb.cursors.DictCursor)
 	
+	# straightforward - maps patient to their PRIMARY oncologist (the one wiht oncologist flag
+	# in the database set to 1)
 	doctorCursor.execute("""
 	SELECT pd.PatientSerNum, pd.DoctorSerNum, pd.OncologistFlag, pd.PrimaryFlag
 	FROM PatientDoctor pd INNER JOIN Doctor d ON d.DoctorSerNum = pd.DoctorSerNum
@@ -664,6 +725,9 @@ def main():
 	# get patient_to_years
 
 	patientCursor = mysql_cn.cursor(MySQLdb.cursors.DictCursor)
+
+	# extracts and maps patients to their age in years - I ended up taking this feature out because
+	# it actually made the prediction worse. Maybe you can play with this as well though...
 
 	patientCursor.execute("""
 		SELECT * FROM Patient ORDER BY PatientSerNum;
@@ -689,6 +753,11 @@ def main():
 	# get patient_to_priority
 
 	priorityCursor = mysql_cn.cursor(MySQLdb.cursors.DictCursor)
+
+	# extracts and maps the patient to the treatment priority - P1 is highest priority and therefore
+	# is usually completed fastest, P4 is the slowest, etc. Usually this is available as a feature because
+	# the priority is set at the start of treatment, but not always, and the priority can change halfway through
+	# , etc... it's complicated
 
 	priorityCursor.execute("""
 		SELECT * FROM Priority;
@@ -730,12 +799,15 @@ def main():
 	print "Done Populating Dictionaries"
 	# Predictor
 
+
+	# X_matrix is the matrix of all of the training (and testing) data.
+
 	X_matrix = []
 	target_set = []
 	target_starts = []
 	target_ends = []
 
-	# make onc, cancer_type lists
+	# make oncologist, cancer_type lists
 	onc_list = []
 	cancer_types_list = []
 
@@ -754,6 +826,11 @@ def main():
 
 	# do timelines first patient course or not
 
+
+	# this appends a flag (1 or 0) that indicates whether or not
+	# this was the first treatment course the patient went through (whether
+	# it was the first valid sequence extracted using the sequence extractor) - for later use when I add
+	# features to X_matrix
 	for k, v in patient_to_timeseries.items():
 		ct_sim_times = []
 		for w in v:
@@ -766,9 +843,16 @@ def main():
 			else:
 				w.append(0.0)
 
+
+
 	print "Done First or Not"
 
 	# create X_matrix and target_set
+	# the features include:
+	# - all the diagnoses, 1 if the patient has that diagnosis, 0 if not (more than one diagnosis may have a 1)
+	# - all the oncologists, 1 if the patient is overseen by that oncologist (not only the primary oncologist - I think this made the predictor better)
+	# - all the priorities, 1 or 0
+	# - whether it was the first treatment course of the patient
 
 	for k, v in patient_to_timeseries.items():
 		first = True
@@ -822,6 +906,13 @@ def main():
 			# else:
 			# 	new_feature_vector.append(float(0.0))
 
+
+			# the y value (the regression value, the target, etc) is the 6th time in the timeseries 
+			# minus the 1st time (w[5] - w[0]) - the time between Ct-Sim and Ready for Treatment.
+
+			# it was important to take away the weekends and holidays in the final timedelta of days
+			# this improved the prediction error from 3 days to about 1.5 days.
+
 			if (w[5]-w[0]).days < 35: #only take one from each patient???
 				X_matrix.append(new_feature_vector)
 				# remove weekends
@@ -846,6 +937,8 @@ def main():
 			first = False
 
 	print "Done Building Matrix"
+	# just separating the X_matrix into training and testing sets
+
 	training_set = [X_matrix[i] for i in range(0, len(X_matrix) - len(X_matrix)/5)]
 	testing_set = [X_matrix[i] for i in range(len(X_matrix)-len(X_matrix)/5, len(X_matrix))]
 
@@ -854,14 +947,27 @@ def main():
 	# for i in range(0,20):
 	# 	print str(X_matrix[i]) + " -> " + str(target_set[i])
 
+
+
 	print "Number of training samples: " + str(len(X_matrix))
 	print "Number of target values: " + str(len(target_set))
+
+	# machine learning (ridge regression algorithm - I think this is the same thing as L2 regularization?) - 
+	# anyways I just used the library... tried playing with parameters and stuff too for a long time
 
 	clf = linear_model.RidgeCV(alphas=[0.01, 0.1, 1.0, 10.0, 20.0, 30.0, 50.0, 100.0, 1000.0])
 	clf.fit(X_matrix, target_set)
 
+
+	# just pickling the predictor 
 	pickle.dump(clf, open( "regularized_linear_regression_clf_initial.p", "wb" ))
 
+
+
+	# Here, I was trying to add features that correspond to given we are already in the middle of treatment,
+	# aka we already did Ct-sim and MD contour, for example, we can add those real waiting times 
+	# into the prediction model. This ended up not really improving anything, because the majority
+	# of the waiting time was split between two stages only - MD contour and dosimetry.
 
 	print "Making a map of all patients to Ct-Sims"
 
@@ -945,6 +1051,8 @@ def main():
 
 
 
+	# there are 5 x_matrices because, as expected, there are five possible stages in between that
+	# we can add extra waiting time information in.
 	print "Finally Adding Business Parameter/Stages:"
 	X_matrix = []
 	target_set = []
@@ -1065,6 +1173,9 @@ def main():
 
 			first = False
 
+
+	# i also pickled all the dictionaries into files because creating them
+	# takes a non-negligable amount of time.
 	pickle.dump(patient_to_ctstarttimes, open("patient_to_ctstarttimes.p", "wb"))
 	pickle.dump(patient_to_timeseries, open("patient_to_timeseries.p", "wb"))
 	pickle.dump(patient_to_priority, open("patient_to_priority.p", "wb"))
@@ -1085,6 +1196,7 @@ def main():
 	clf = linear_model.RidgeCV(alphas=[0.01, 0.1, 1.0, 10.0, 20.0, 30.0, 50.0, 100.0, 1000.0])
 	clf.fit(training_set, target_1)
 
+	# clf.predict and poof - we get an array of predictions for the testing set!
 	preds = clf.predict(testing_set)
 
 	error_set = []
@@ -1092,6 +1204,7 @@ def main():
 		error = abs(preds[i] - target_2[i])
 		error_set.append(error)
 
+	# just calculated the average absolute value error - other errors may be more appropriate (squared?)
 	print "Average Absolute Value Error for Regularized Linear Regression: " + str(numpy.mean(error_set))
 	print "Stdev of Error: " + str(numpy.std(error_set))
 
@@ -1126,6 +1239,7 @@ def main():
 
 	pickle.dump(clf, open( "regularized_linear_regression_clf_1.p", "wb" ))
 
+	# Here i'm just pickling the rest of the trained models for each x_matrix
 	print "Done Pickling X_matrix_1"
 
 
